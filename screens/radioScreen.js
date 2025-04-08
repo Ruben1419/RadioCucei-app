@@ -8,7 +8,6 @@ import {
   StatusBar,
   Linking,
   Dimensions,
-  Platform,
   ScrollView,
   ActivityIndicator
 } from 'react-native';
@@ -21,10 +20,10 @@ import Reproductor from '../components/reproductor';
 
 const RADIO_URL_A = 'http://s3.streammonster.com:8225/stream';
 const RADIO_URL_B = 'http://s3.streammonster.com:8225/ladob';
-const METADATA_URL = 'http://64.150.176.42:8225/status-json.xsl';
+const METADATA_URL_A = 'http://64.150.176.42:8225/status-json.xsl';
+const METADATA_URL_B = 'http://64.150.176.42:8225/status-json.xsl';
 
 const windowWidth = Dimensions.get('window').width;
-const windowHeight = Dimensions.get('window').height;
 
 export default function RadioScreen() {
   const [sound, setSound] = useState(null);
@@ -39,8 +38,8 @@ export default function RadioScreen() {
   const [isSwitchButtonEnabled, setIsSwitchButtonEnabled] = useState(true);
   const [metadataLoading, setMetadataLoading] = useState(true);
   const [metadataError, setMetadataError] = useState(false);
+  const [currentMetadataUrl, setCurrentMetadataUrl] = useState(METADATA_URL_A);
 
-  // Verificar estado de la transmisión
   const checkTransmission = async () => {
     try {
       const controller = new AbortController();
@@ -60,26 +59,42 @@ export default function RadioScreen() {
     }
   };
 
-  // Obtener metadatos de la canción
   const fetchMetadata = async () => {
     if (!isTransmitting) return;
 
     try {
-      const response = await fetch(METADATA_URL);
+      const response = await fetch(currentMetadataUrl);
       const rawData = await response.text();
       const data = JSON.parse(rawData);
+      
+      // Buscar metadatos específicos para cada lado
+      const sources = data.icestats?.source;
+      const sourcesArray = Array.isArray(sources) ? sources : [sources].filter(Boolean);
 
-      // Extraer título de la estructura del JSON
-      const currentTrack = data.icestats?.source?.[0]?.title ||
-        data.icestats?.source?.title ||
-        'Título no disponible';
+      const currentSource = sourcesArray.find(source => {
+        const isLadoA = currentStation === RADIO_URL_A;
+        return (
+          (source.listenurl?.includes(isLadoA ? 'stream' : 'ladob')) ||
+          (source.server_name?.includes(isLadoA ? 'Lado A' : 'Lado B')) ||
+          (source.title?.match(new RegExp(isLadoA ? 'A:|Lado A' : 'B:|Lado B', 'i')))
+        );
+      });
 
-      setCurrentSong(currentTrack.replace(/^Currently playing: /, ''));
+      const rawTitle = currentSource?.title || `En vivo - ${currentStation === RADIO_URL_A ? 'Lado A' : 'Lado B'}`;
+      
+      const cleanTitle = rawTitle
+        .replace(/^(Currently playing|En vivo):?\s*/i, '')
+        .replace(/\[.*?\]/g, '')
+        .replace(/\s+/g, ' ')
+        .trim();
+
+      setCurrentSong(cleanTitle || 'Cargando...');
       setMetadataError(false);
+
     } catch (error) {
       console.error('Error obteniendo metadatos:', error);
+      setCurrentSong(currentStation === RADIO_URL_A ? 'Lado A - En vivo' : 'Lado B - En vivo');
       setMetadataError(true);
-      setCurrentSong('Error cargando información');
     } finally {
       setMetadataLoading(false);
     }
@@ -97,9 +112,8 @@ export default function RadioScreen() {
       const metadataInterval = setInterval(fetchMetadata, 10000);
       return () => clearInterval(metadataInterval);
     }
-  }, [isTransmitting]);
+  }, [isTransmitting, currentMetadataUrl]);
 
-  // Manejo de audio
   useEffect(() => {
     const loadSound = async () => {
       if (currentStation && isTransmitting) {
@@ -142,9 +156,18 @@ export default function RadioScreen() {
     if (!isSwitchButtonEnabled) return;
 
     setIsSwitchButtonEnabled(false);
-    setCurrentStation(prev => prev === RADIO_URL_A ? RADIO_URL_B : RADIO_URL_A);
-    setIsPlaying(false);
+    setCurrentSong('Cargando...');
+    setMetadataLoading(true);
+    
+    if (currentStation === RADIO_URL_A) {
+      setCurrentStation(RADIO_URL_B);
+      setCurrentMetadataUrl(METADATA_URL_B);
+    } else {
+      setCurrentStation(RADIO_URL_A);
+      setCurrentMetadataUrl(METADATA_URL_A);
+    }
 
+    setIsPlaying(false);
     setTimeout(() => setIsSwitchButtonEnabled(true), 3000);
   };
 
@@ -153,7 +176,6 @@ export default function RadioScreen() {
     sound?.setVolumeAsync(value);
   };
 
-  // Resto de tu código de interfaz...
   const toggleMenu = () => setIsMenuVisible(!isMenuVisible);
 
   const handleOpenURL = ({ url }) => {
@@ -209,9 +231,8 @@ export default function RadioScreen() {
             handleVolumeChange={handleVolumeChange}
             switchStation={switchStation}
             RADIO_URL_A={RADIO_URL_A}
+            metadataLoading={metadataLoading}
           />
-
-
 
           <View style={styles.facebookContainer}>
             <WebView
@@ -289,16 +310,5 @@ const styles = StyleSheet.create({
     ...StyleSheet.absoluteFillObject,
     backgroundColor: 'rgba(0,0,0,0.5)',
     zIndex: 1,
-  },
-  songInfoContainer: {
-    marginTop: 20,
-    padding: 10,
-    backgroundColor: '#f0f0f0',
-    borderRadius: 10,
-    alignItems: 'center',
-  },
-  songInfoText: {
-    fontSize: 16,
-    color: '#333',
   },
 });

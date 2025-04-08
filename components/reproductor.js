@@ -1,13 +1,16 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   View,
   Text,
   StyleSheet,
   TouchableOpacity,
+  Animated,
+  Easing,
+  Dimensions,
+  ActivityIndicator
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import Slider from '@react-native-community/slider';
-import { Audio } from 'expo-av';
 
 const Reproductor = ({
   sound,
@@ -21,43 +24,105 @@ const Reproductor = ({
   togglePlayPause,
   handleVolumeChange,
   switchStation,
-  RADIO_URL_A
+  RADIO_URL_A,
+  metadataLoading,
 }) => {
   const [songTitle, setSongTitle] = useState(currentSong || 'Cargando...');
+  const [isPlayButtonDelayed, setIsPlayButtonDelayed] = useState(true);
+  const [showFallback, setShowFallback] = useState(false);
+  const scrollAnim = useRef(new Animated.Value(0)).current;
+  const screenWidth = Dimensions.get('window').width;
+
+  const cleanSongTitle = (title) => {
+    return title
+      .replace(/\[.*?\]/g, '')
+      .replace(/\s+/g, ' ')
+      .trim();
+  };
 
   useEffect(() => {
-    setSongTitle(currentSong || 'Sin información');
-  }, [currentSong]);
+    const cleanedTitle = cleanSongTitle(currentSong || 'Sin información');
+    setSongTitle(cleanedTitle);
+    scrollAnim.setValue(screenWidth);
+    startScrolling();
+  }, [currentSong, currentStation]);
+
+  useEffect(() => {
+    let timeoutId;
+    const isDefaultTitle = 
+      songTitle === 'Cargando...' || 
+      songTitle.includes('En vivo') || 
+      songTitle === 'Sin información';
+
+    if (!metadataLoading && isDefaultTitle) {
+      timeoutId = setTimeout(() => {
+        setShowFallback(true);
+      }, 3000);
+    } else {
+      setShowFallback(false);
+    }
+
+    return () => {
+      if (timeoutId) clearTimeout(timeoutId);
+    };
+  }, [songTitle, metadataLoading]);
+
+  useEffect(() => {
+    setIsPlayButtonDelayed(true);
+    const timer = setTimeout(() => {
+      setIsPlayButtonDelayed(false);
+    }, 3000);
+
+    return () => clearTimeout(timer);
+  }, [currentStation]);
+
+  const startScrolling = () => {
+    scrollAnim.setValue(screenWidth);
+    Animated.loop(
+      Animated.timing(scrollAnim, {
+        toValue: -screenWidth,
+        duration: 10000,
+        easing: Easing.linear,
+        useNativeDriver: true,
+      })
+    ).start();
+  };
 
   return (
     <>
       <View style={styles.onAirContainer}>
-        <Text style={[styles.onAirText, !isTransmitting && styles.onAirTextOff]}>ON AIR</Text>
+        <Text style={[styles.onAirText, !isTransmitting && styles.onAirTextOff]}>
+          {isTransmitting ? 'ON AIR' : 'ON AIR'}
+        </Text>
       </View>
 
       <View style={styles.playerContainer}>
         <View style={styles.playerButtons}>
           <TouchableOpacity
             onPress={togglePlayPause}
-            disabled={!isPlayButtonEnabled}
-            style={[
+            disabled={!isPlayButtonEnabled || isPlayButtonDelayed}
+            style={[ 
               styles.playButton,
-              isPlayButtonEnabled && (isPlaying ? styles.playButtonActive : styles.playButtonReady),
-              !isPlayButtonEnabled && styles.playButtonInactive,
+              isPlayButtonEnabled && !isPlayButtonDelayed &&
+              (isPlaying ? styles.playButtonActive : styles.playButtonReady),
+              (!isPlayButtonEnabled || isPlayButtonDelayed) && styles.playButtonInactive,
             ]}
           >
             <Ionicons
               name={isPlaying ? 'pause' : 'play'}
               size={28}
-              color={isPlayButtonEnabled ? 'White' : '#444'}
+              color={!isPlayButtonEnabled || isPlayButtonDelayed ? '#444' : '#000'}
             />
           </TouchableOpacity>
+
           <TouchableOpacity
             onPress={switchStation}
             disabled={!isSwitchButtonEnabled}
             style={[
               styles.switchButton,
-              isSwitchButtonEnabled ? styles.switchButtonEnabled : styles.switchButtonDisabled,
+              isSwitchButtonEnabled
+                ? styles.switchButtonEnabled
+                : styles.switchButtonDisabled,
             ]}
           >
             <Text style={styles.switchButtonText}>
@@ -82,8 +147,28 @@ const Reproductor = ({
       </View>
 
       <View style={styles.songInfoContainer}>
-        <Text style={styles.songTitle}>Sonando ahora:</Text>
-        <Text style={styles.songName}>{songTitle}</Text>
+        <Text style={styles.songTitle}>
+          {currentStation === RADIO_URL_A ? 'Lado A' : 'Lado B'} - Sonando ahora:
+        </Text>
+        <View style={styles.marqueeContainer}>
+          {metadataLoading ? (
+            <ActivityIndicator size="small" color="#c40000" />
+          ) : showFallback ? (
+            <Text style={styles.songName}>Sin información</Text>
+          ) : (
+            <Animated.Text
+              style={[
+                styles.songName,
+                {
+                  transform: [{ translateX: scrollAnim }],
+                },
+              ]}
+              numberOfLines={1}
+            >
+              {songTitle}
+            </Animated.Text>
+          )}
+        </View>
       </View>
     </>
   );
@@ -168,11 +253,18 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: 'bold',
     color: '#c40000',
+    marginBottom: 5,
+  },
+  marqueeContainer: {
+    height: 25,
+    overflow: 'hidden',
+    width: '80%',
   },
   songName: {
     fontSize: 16,
     color: '#000',
-    marginTop: 5,
+    paddingHorizontal: 20,
+    minWidth: '150%',
   },
 });
 
