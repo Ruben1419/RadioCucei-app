@@ -1,0 +1,60 @@
+# Entorno de desarrollo de Expo
+.expo/
+.expo-shared/
+.expo-shared-credentials.json
+
+# Dependencias
+node_modules/
+.npm/
+package-lock.json
+yarn.lock
+
+# Variables de entorno
+.env
+.env.local
+.env.development
+.env.production
+
+# Archivos del sistema
+.DS_Store
+Thumbs.db
+*.log
+*.sublime-workspace
+*.sublime-project
+
+# Builds y binarios
+ios/build/
+android/app/build/
+android/.gradle/
+android/local.properties
+*.apk
+*.aab
+*.keystore
+
+# Configuración de IDEs
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Configuración de Metro/Bundler
+metro.config.js.local
+*.map
+
+# Archivos temporales de Expo
+tmp/
+web-build/
+
+# Testing
+coverage/
+.nyc_output/
+
+# macOS
+._*
+
+# Windows
+Desktop.ini
+
+# Archivos específicos de React Native
+/android/
+/ios/

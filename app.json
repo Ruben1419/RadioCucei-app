@@ -1,0 +1,54 @@
+{
+  "expo": {
+    "name": "radio-cucei-app",
+    "slug": "radio-cucei-app",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "light",
+    "newArchEnabled": true,
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.ruben1419.radio-cucei-app",
+      "infoPlist": {
+        "UIBackgroundModes": ["audio"],
+        "NSAppTransportSecurity": {
+          "NSExceptionDomains": {
+            "s3.streammonster.com": {
+              "NSExceptionAllowsInsecureHTTPLoads": true,
+              "NSIncludesSubdomains": true
+            },
+            "64.150.176.42": {
+              "NSExceptionAllowsInsecureHTTPLoads": true,
+              "NSIncludesSubdomains": true
+            }
+          }
+        }
+      }
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#ffffff"
+      },
+      "package": "com.ruben1419.radio-cucei-app",
+      "permissions": [
+        "INTERNET"
+      ],
+      "networkSecurityConfig": "@xml/network_security_config"
+    },
+    "web": {
+      "favicon": "./assets/favicon.png"
+    },
+    "plugins": [
+      [
+        "expo-av",
+        {
+          "audio": {
+            "staysActiveInBackground": true
+          }
+        }
+      ]
+    ]
+  }
+}
