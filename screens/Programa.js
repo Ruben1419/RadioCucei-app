@@ -93,7 +93,7 @@ const Programa = () => {
               image={EspiralSonidoImage}
               title="Espiral Sonido"
               description="Un espacio dedicado a la búsqueda, escucha y retroalimentación de los sonidos alternativos que convergen en los nuevos panoramas musicales del presente."
-              locutores="Locutor: Carlos Espinoza."
+              locutores="Locutor: Roy Sánchez"
               onbuttonPress={() => Linking.openURL('https://www.facebook.com/La-Espiral-del-Sonido-624674264303647/')} // Abre el enlace de Facebook
             />
             <ProgramaCard
@@ -169,8 +169,8 @@ const Programa = () => {
             <ProgramaCard
               image={TopografiaActual}
               title="Topografía Actual"
-              description="Programa de música variada."
-              locutores="Locutor: TBA"
+              description="Este programa tiene como misión difundir los logros y retos de la Topografía en México."
+              locutores="Locutor: Alberto Hernández, Valentín Flores y Christian Quintero."
               onbuttonPress={() => Linking.openURL('https://www.facebook.com/topografia.actual/')} // Abre el enlace de Facebook
             />
             <ProgramaCard
