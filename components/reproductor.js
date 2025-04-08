@@ -1,9 +1,12 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   View,
   Text,
   StyleSheet,
   TouchableOpacity,
+  Animated,
+  Easing,
+  Dimensions,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import Slider from '@react-native-community/slider';
@@ -21,43 +24,78 @@ const Reproductor = ({
   togglePlayPause,
   handleVolumeChange,
   switchStation,
-  RADIO_URL_A
+  RADIO_URL_A,
 }) => {
   const [songTitle, setSongTitle] = useState(currentSong || 'Cargando...');
+  const [isPlayButtonDelayed, setIsPlayButtonDelayed] = useState(true);
+  const scrollAnim = useRef(new Animated.Value(0)).current;
+  const screenWidth = Dimensions.get('window').width;
 
   useEffect(() => {
     setSongTitle(currentSong || 'Sin información');
   }, [currentSong]);
 
+  useEffect(() => {
+    scrollAnim.stopAnimation();
+    startScrolling();
+  }, [songTitle]);
+
+  useEffect(() => {
+    setIsPlayButtonDelayed(true);
+    const timer = setTimeout(() => {
+      setIsPlayButtonDelayed(false);
+    }, 3000);
+
+    return () => clearTimeout(timer);
+  }, [currentStation]);
+
+  const startScrolling = () => {
+    scrollAnim.setValue(screenWidth);
+    Animated.loop(
+      Animated.timing(scrollAnim, {
+        toValue: -screenWidth,
+        duration: 10000,
+        easing: Easing.linear,
+        useNativeDriver: true,
+      })
+    ).start();
+  };
+
   return (
     <>
       <View style={styles.onAirContainer}>
-        <Text style={[styles.onAirText, !isTransmitting && styles.onAirTextOff]}>ON AIR</Text>
+        <Text style={[styles.onAirText, !isTransmitting && styles.onAirTextOff]}>
+          ON AIR
+        </Text>
       </View>
 
       <View style={styles.playerContainer}>
         <View style={styles.playerButtons}>
           <TouchableOpacity
             onPress={togglePlayPause}
-            disabled={!isPlayButtonEnabled}
+            disabled={!isPlayButtonEnabled || isPlayButtonDelayed}
             style={[
               styles.playButton,
-              isPlayButtonEnabled && (isPlaying ? styles.playButtonActive : styles.playButtonReady),
-              !isPlayButtonEnabled && styles.playButtonInactive,
+              isPlayButtonEnabled && !isPlayButtonDelayed &&
+              (isPlaying ? styles.playButtonActive : styles.playButtonReady),
+              (!isPlayButtonEnabled || isPlayButtonDelayed) && styles.playButtonInactive,
             ]}
           >
             <Ionicons
               name={isPlaying ? 'pause' : 'play'}
               size={28}
-              color={isPlayButtonEnabled ? 'White' : '#444'}
+              color={!isPlayButtonEnabled || isPlayButtonDelayed ? '#444' : '#000'}
             />
           </TouchableOpacity>
+
           <TouchableOpacity
             onPress={switchStation}
             disabled={!isSwitchButtonEnabled}
             style={[
               styles.switchButton,
-              isSwitchButtonEnabled ? styles.switchButtonEnabled : styles.switchButtonDisabled,
+              isSwitchButtonEnabled
+                ? styles.switchButtonEnabled
+                : styles.switchButtonDisabled,
             ]}
           >
             <Text style={styles.switchButtonText}>
@@ -83,7 +121,19 @@ const Reproductor = ({
 
       <View style={styles.songInfoContainer}>
         <Text style={styles.songTitle}>Sonando ahora:</Text>
-        <Text style={styles.songName}>{songTitle}</Text>
+        <View style={styles.marqueeContainer}>
+          <Animated.Text
+            style={[
+              styles.songName,
+              {
+                transform: [{ translateX: scrollAnim }],
+              },
+            ]}
+            numberOfLines={1}
+          >
+            {songTitle}
+          </Animated.Text>
+        </View>
       </View>
     </>
   );
@@ -168,11 +218,17 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: 'bold',
     color: '#c40000',
+    marginBottom: 5,
+  },
+  marqueeContainer: {
+    height: 25,
+    overflow: 'hidden',
+    width: '80%',
   },
   songName: {
     fontSize: 16,
     color: '#000',
-    marginTop: 5,
+    whiteSpace: 'nowrap',
   },
 });
 
