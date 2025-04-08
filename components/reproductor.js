@@ -7,6 +7,7 @@ import {
   Animated,
   Easing,
   Dimensions,
+  ActivityIndicator
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import Slider from '@react-native-community/slider';
@@ -24,25 +25,47 @@ const Reproductor = ({
   handleVolumeChange,
   switchStation,
   RADIO_URL_A,
+  metadataLoading,
 }) => {
   const [songTitle, setSongTitle] = useState(currentSong || 'Cargando...');
   const [isPlayButtonDelayed, setIsPlayButtonDelayed] = useState(true);
+  const [showFallback, setShowFallback] = useState(false);
   const scrollAnim = useRef(new Animated.Value(0)).current;
   const screenWidth = Dimensions.get('window').width;
 
-  // Función para limpiar el título de la canción
   const cleanSongTitle = (title) => {
-    return title.replace(/\[.*?\]$/, '').trim(); // Elimina texto entre corchetes al final
+    return title
+      .replace(/\[.*?\]/g, '')
+      .replace(/\s+/g, ' ')
+      .trim();
   };
 
   useEffect(() => {
-    setSongTitle(cleanSongTitle(currentSong || 'Sin información'));
-  }, [currentSong]);
+    const cleanedTitle = cleanSongTitle(currentSong || 'Sin información');
+    setSongTitle(cleanedTitle);
+    scrollAnim.setValue(screenWidth);
+    startScrolling();
+  }, [currentSong, currentStation]);
 
   useEffect(() => {
-    scrollAnim.stopAnimation();
-    startScrolling();
-  }, [songTitle]);
+    let timeoutId;
+    const isDefaultTitle = 
+      songTitle === 'Cargando...' || 
+      songTitle.includes('En vivo') || 
+      songTitle === 'Sin información';
+
+    if (!metadataLoading && isDefaultTitle) {
+      timeoutId = setTimeout(() => {
+        setShowFallback(true);
+      }, 3000);
+    } else {
+      setShowFallback(false);
+    }
+
+    return () => {
+      if (timeoutId) clearTimeout(timeoutId);
+    };
+  }, [songTitle, metadataLoading]);
 
   useEffect(() => {
     setIsPlayButtonDelayed(true);
@@ -69,7 +92,7 @@ const Reproductor = ({
     <>
       <View style={styles.onAirContainer}>
         <Text style={[styles.onAirText, !isTransmitting && styles.onAirTextOff]}>
-          ON AIR
+          {isTransmitting ? 'ON AIR' : 'ON AIR'}
         </Text>
       </View>
 
@@ -78,7 +101,7 @@ const Reproductor = ({
           <TouchableOpacity
             onPress={togglePlayPause}
             disabled={!isPlayButtonEnabled || isPlayButtonDelayed}
-            style={[
+            style={[ 
               styles.playButton,
               isPlayButtonEnabled && !isPlayButtonDelayed &&
               (isPlaying ? styles.playButtonActive : styles.playButtonReady),
@@ -124,19 +147,27 @@ const Reproductor = ({
       </View>
 
       <View style={styles.songInfoContainer}>
-        <Text style={styles.songTitle}>Sonando ahora:</Text>
+        <Text style={styles.songTitle}>
+          {currentStation === RADIO_URL_A ? 'Lado A' : 'Lado B'} - Sonando ahora:
+        </Text>
         <View style={styles.marqueeContainer}>
-          <Animated.Text
-            style={[
-              styles.songName,
-              {
-                transform: [{ translateX: scrollAnim }],
-              },
-            ]}
-            numberOfLines={1}
-          >
-            {songTitle}
-          </Animated.Text>
+          {metadataLoading ? (
+            <ActivityIndicator size="small" color="#c40000" />
+          ) : showFallback ? (
+            <Text style={styles.songName}>Sin información</Text>
+          ) : (
+            <Animated.Text
+              style={[
+                styles.songName,
+                {
+                  transform: [{ translateX: scrollAnim }],
+                },
+              ]}
+              numberOfLines={1}
+            >
+              {songTitle}
+            </Animated.Text>
+          )}
         </View>
       </View>
     </>
@@ -232,7 +263,8 @@ const styles = StyleSheet.create({
   songName: {
     fontSize: 16,
     color: '#000',
-    whiteSpace: 'nowrap',
+    paddingHorizontal: 20,
+    minWidth: '150%',
   },
 });
 
