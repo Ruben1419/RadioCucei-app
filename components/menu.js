@@ -22,7 +22,7 @@ function AppNavigator() {
       <Stack.Screen name="Programa" component={ProgramaScreen} />
       <Stack.Screen name="Nosotros" component={NosotrosScreen} />
       <Stack.Screen name="Contacto" component={ContactoScreen} />
-      <Stack.Screen name="LikedSongs" component={LikedSongsScreen} />
+      
     </Stack.Navigator>
   );
 }
@@ -34,16 +34,10 @@ const Menu = ({ isMenuVisible, toggleMenu }) => {
   const navigation = useNavigation(); // Usar useNavigation para obtener el objeto navigation
 
   const menuItems = [
-    {
-      title: "Liked Songs",
-      onPress: () => {
-        /* Lógica para Liked Songs */
-      },
-    },
     { title: "Programa", onPress: () => navigation.navigate("Programa") },
     { title: "Nosotros", onPress: () => navigation.navigate("Nosotros") },
     { title: "Contacto", onPress: () => navigation.navigate("Contacto") },
-    { title: "Liked Songs", onPress: () => navigation.navigate("LikedSongs") },
+    
   ];
 
   const translateX = useRef(new Animated.Value(-windowWidth)).current;
