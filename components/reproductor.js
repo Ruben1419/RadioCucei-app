@@ -10,7 +10,6 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import Slider from '@react-native-community/slider';
-import { Audio } from 'expo-av';
 
 const Reproductor = ({
   sound,
@@ -31,8 +30,13 @@ const Reproductor = ({
   const scrollAnim = useRef(new Animated.Value(0)).current;
   const screenWidth = Dimensions.get('window').width;
 
+  // Función para limpiar el título de la canción
+  const cleanSongTitle = (title) => {
+    return title.replace(/\[.*?\]$/, '').trim(); // Elimina texto entre corchetes al final
+  };
+
   useEffect(() => {
-    setSongTitle(currentSong || 'Sin información');
+    setSongTitle(cleanSongTitle(currentSong || 'Sin información'));
   }, [currentSong]);
 
   useEffect(() => {
