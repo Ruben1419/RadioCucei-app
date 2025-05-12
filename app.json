@@ -31,11 +31,10 @@
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#ffffff"
       },
-      "package": "com.ruben1419.radio-cucei-app",
+      "package": "com.ruben1419.radiocuceiapp",
       "permissions": [
         "INTERNET"
-      ],
-      "networkSecurityConfig": "@xml/network_security_config"
+      ]
     },
     "web": {
       "favicon": "./assets/favicon.png"
