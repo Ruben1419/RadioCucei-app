@@ -6,10 +6,10 @@
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
-    "newArchEnabled": true,
+    "newArchEnabled": false,
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.ruben1419.radio-cucei-app",
+      "bundleIdentifier": "com.rubenradio.radio.cucei.app",
       "infoPlist": {
         "UIBackgroundModes": ["audio"],
         "NSAppTransportSecurity": {
@@ -31,7 +31,7 @@
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#ffffff"
       },
-      "package": "com.ruben1419.radio-cucei-app",
+      "package": "com.rubenradio.radio_cucei_app",
       "permissions": [
         "INTERNET"
       ],

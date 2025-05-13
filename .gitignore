@@ -56,5 +56,3 @@ coverage/
 Desktop.ini
 
 # Archivos específicos de React Native
-/android/
-/ios/
